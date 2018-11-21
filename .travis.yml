@@ -1,9 +1,13 @@
 language: java
 
-jdk:
-  - oraclejdk8
-  - oraclejdk11
-  - openjdk11
+env:
+  global:
+    - SONATYPE_USERNAME=ph@phloc.com
+    - secure: "Gz7Zvkkd25ylGmdC2xTrMAG2CTABnKNxCW67zRWEgAPxzP/f0LA9RUQ2O4yVFHuQOOcyQ5PPvCsxFBxFxBndmoiWKykkOxKgnzlH5T6n+MMnA9R/cy7/dmJLxe8aGtHsDkdu7a1WrNRElphJ3rpS3
+QdVWoh8ocZP3Urfphk55didHynGP5A4QENv/0+THmRj1rjHd8NGZptbIYOTUk4y9Qfwgm7YtlwF4PKKEvST2OwJq5n8XhbYz/sDhjlH05WLTh4eRlGXz4XNhQgyi/jjODwNJHbt/rFJu//IBY77svaQejQ4yIcLf
+yrvE497S9Lpye1XexskXMtz1RBK1uu3z+YpMsClQVNkBOVUjgcL2Sdd8nF9igSFo5R00Mc4dtqrHCNnj9PVWs70BV9TRhqUnv3Zt/o9edbQUH8nsCCowWQGjmV9ZV2hSMs+S/FGFajlsNejKqRKY1xq7ineFDzKz
+s4IUZ26oKKFBQ1UEXQ/lFqbtD+0n8Lt414Iv5bTZRZD0ZiqiR2MgEYSPUPSuLR7WxVFv0GoeQwtQ9FGxm2+eoVijVUZT9X5VbwMe2ubqgGMz8ihCUjSWmzUjuvweSz3bTzfL/Ln5FA7zY17S0yy3n5MT+wZrc7xM
+JMD2sa0of8e2uQtTVKBfUCj/RdbldSl/1SpG3zWgZQFqa2ssWXQJ1s="
 
 addons:
   # Required to avoid openjdk7 buffer overflow:
@@ -28,5 +32,17 @@ cache:
     - $HOME/.m2
 
 branches:
-  except:
-    - gh-pages
+  only:
+    - master
+
+jobs:
+  include:
+    - stage: test
+      jdk: oraclejdk8
+      after_success:
+        - mvn deploy --settings travis-settings.xml -DskipTests=true -B -P travis-deploy
+    - stage: test
+      jdk: oraclejdk11
+    - stage: test
+      jdk: openjdk11
+    
