@@ -108,9 +108,9 @@
   </prerequisites>
 
   <scm>
-    <connection>scm:git:https://github.com/mojohaus/jaxws-maven-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/mojohaus/jaxws-maven-plugin.git</developerConnection>
-    <url>https://github.com/mojohaus/jaxws-maven-plugin</url>
+    <connection>scm:git:git@github.com:phax/jaxws-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:phax/jaxws-maven-plugin.git</developerConnection>
+    <url>http://github.com/phax/jaxws-maven-plugin</url>
     <tag>HEAD</tag>
   </scm>
   <issueManagement>
