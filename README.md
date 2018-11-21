@@ -1,18 +1,20 @@
 # MojoHaus JAX-WS Maven Plugin
 
 This is the [jaxws-maven-plugin](http://www.mojohaus.org/jaxws-maven-plugin/).
- 
-[![Build Status](https://travis-ci.org/mojohaus/jaxws-maven-plugin.svg?branch=master)](https://travis-ci.org/mojohaus/jaxws-maven-plugin)
 
-## Releasing
+**This is a work around release for Java 9-11 compatibility**
 
-* Make sure `gpg-agent` is running.
-* Execute `mvn -B release:prepare release:perform`
+It is based on the 2.6-SNAPSHOT branch from 2018-11-21 including the PR from @theit for Java 9 support.
 
-For publishing the site do the following:
+## Maven usage
 
+```xml
+<plugin>
+  <groupId>com.helger.maven</groupId>
+  <artifactId>jaxws-maven-plugin</artifactId>
+  <version>2.6</version>
+  <configuration>
+    ...
+  </configuration>
+</plugin>
 ```
-cd target/checkout
-mvn verify site site:stage scm-publish:publish-scm
-```
-
