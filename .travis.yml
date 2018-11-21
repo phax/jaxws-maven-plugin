@@ -45,4 +45,3 @@ jobs:
       jdk: oraclejdk11
     - stage: test
       jdk: openjdk11
-    

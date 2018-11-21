@@ -24,9 +24,14 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
+    <!--  
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
     <version>40</version>
+    -->
+    <groupId>com.helger</groupId>
+    <artifactId>parent-pom</artifactId>
+    <version>1.10.7</version>
   </parent>
 
   <groupId>com.helger.maven</groupId>
