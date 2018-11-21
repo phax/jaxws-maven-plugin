@@ -35,12 +35,19 @@
     <name>JAX_WS_COMMONS-81</name>
     <description>wsgen, wsimport - support tools from JDK</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>javax.xml.ws</groupId>
+            <artifactId>jaxws-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.jws</groupId>
+            <artifactId>javax.jws-api</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>@project.groupId@</groupId>
                 <artifactId>jaxws-maven-plugin</artifactId>
@@ -51,7 +58,6 @@
                             <goal>wsgen</goal>
                         </goals>
                         <configuration>
-                            <executable>${tool.wsgen}</executable>
                             <sei>org.jvnet.jax_ws_commons.jaxws.test.EchoService</sei>
                             <destDir>${project.build.directory}/custom/classes</destDir>
                             <extension>true</extension>
@@ -73,7 +79,6 @@
                             <goal>wsgen</goal>
                         </goals>
                         <configuration>
-                            <executable>${tool.wsgen}</executable>
                             <sei>org.jvnet.jax_ws_commons.jaxws.test.AddService</sei>
                         </configuration>
                     </execution>
@@ -83,7 +88,6 @@
                             <goal>wsgen-test</goal>
                         </goals>
                         <configuration>
-                            <executable>${tool.wsgen}</executable>
                             <sei>org.jvnet.jax_ws_commons.jaxws.test.TService</sei>
                             <genWsdl>true</genWsdl>
                             <portname>{http://example.org/TestService}ExPort</portname>
@@ -95,9 +99,6 @@
                         <goals>
                             <goal>wsimport</goal>
                         </goals>
-                        <configuration>
-                            <executable>${tool.wsimport}</executable>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>id5</id>
@@ -105,7 +106,6 @@
                             <goal>wsimport</goal>
                         </goals>
                         <configuration>
-                            <executable>${tool.wsimport}</executable>
                             <wsdlUrls>
                                 <wsdlUrl>https://raw.githubusercontent.com/javaee/metro-jax-ws/a661c053aa1a948893b745936a387bf5190c254c/jaxws-ri/tests/unit/testcases/fromwsdl/additional_header/doclit/server/sample.wsdl</wsdlUrl>
                             </wsdlUrls>
@@ -130,7 +130,6 @@
                             <goal>wsimport-test</goal>
                         </goals>
                         <configuration>
-                            <executable>${tool.wsimport}</executable>
                             <wsdlDirectory>${project.basedir}/src/test-wsdl</wsdlDirectory>
                             <extension>true</extension>
                             <verbose>true</verbose>
@@ -141,30 +140,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>win</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <tool.wsgen>${java.home}/../bin/wsgen.exe</tool.wsgen>
-                <tool.wsimport>${java.home}/../bin/wsimport.exe</tool.wsimport>
-            </properties>
-        </profile>
-        <profile>
-            <id>nix</id>
-            <activation>
-                <os>
-                    <family>!windows</family>
-                </os>
-            </activation>
-            <properties>
-                <tool.wsgen>${java.home}/../bin/wsgen</tool.wsgen>
-                <tool.wsimport>${java.home}/../bin/wsimport</tool.wsimport>
-            </properties>
-        </profile>
-    </profiles>
 </project>
