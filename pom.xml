@@ -29,6 +29,7 @@
     <version>40</version>
   </parent>
 
+  <groupId>com.helger.maven</groupId>
   <artifactId>jaxws-maven-plugin</artifactId>
   <version>2.6-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
@@ -117,7 +118,6 @@
   </ciManagement>
 
   <properties>
-    <jaxws-tools.version>2.3.1</jaxws-tools.version>
     <netbeans.hint.jdkPlatform>JDK_1.8</netbeans.hint.jdkPlatform>
     <scmpublish.content>${project.build.directory}/staging/jaxws-maven-plugin</scmpublish.content>
     <mavenVersion>3.0</mavenVersion>
@@ -281,6 +281,32 @@
   </reporting>
 
   <profiles>
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <jaxws-tools.version>2.2.10</jaxws-tools.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>com.sun.xml.ws</groupId>
+          <artifactId>jaxws-rt</artifactId>
+          <version>${jaxws-tools.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>jdk9up</id>
+      <activation>
+        <!-- use "12)" to support versions like "11.0.1" -->
+        <jdk>[9,12)</jdk>
+      </activation>
+      <properties>
+        <jaxws-tools.version>2.3.1</jaxws-tools.version>
+      </properties>
+    </profile>
     <profile>
       <id>coverage</id>
       <activation>
