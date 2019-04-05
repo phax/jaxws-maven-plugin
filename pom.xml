@@ -326,7 +326,7 @@
         <jdk>[9,12)</jdk>
       </activation>
       <properties>
-        <jaxws-tools.version>2.3.1</jaxws-tools.version>
+        <jaxws-tools.version>2.3.2</jaxws-tools.version>
       </properties>
     </profile>
     <profile>
