@@ -41,7 +41,7 @@ branches:
 jobs:
   include:
     - stage: test
-      jdk: oraclejdk8
+      jdk: openjdk8
       after_success:
         - mvn deploy --settings travis-settings.xml -DskipTests=true -B -P travis-deploy
     - stage: test
