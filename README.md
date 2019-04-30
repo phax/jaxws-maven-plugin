@@ -12,6 +12,13 @@ Latest release: **2.6** from *2018-11-21*
 
 This plugin is meant to work as a direct replacement to `org.codehaus.mojo:jaxws-maven-plugin:2.5`
 
+## News and Noteworthy
+
+* v2.6.1 - work in progress
+    * Integrated https://github.com/mojohaus/jaxws-maven-plugin/issues/19
+* v2.6 - 2018-11-21
+    * Initial release 
+
 ## Maven usage
 
 ```xml
