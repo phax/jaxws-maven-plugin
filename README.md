@@ -16,6 +16,7 @@ This plugin is meant to work as a direct replacement to `org.codehaus.mojo:jaxws
 
 * v2.6.1 - work in progress
     * Integrated https://github.com/mojohaus/jaxws-maven-plugin/issues/19
+    * Added Java 12 support
 * v2.6 - 2018-11-21
     * Initial release 
 
