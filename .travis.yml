@@ -45,6 +45,8 @@ jobs:
       after_success:
         - mvn deploy --settings travis-settings.xml -DskipTests=true -B -P travis-deploy
     - stage: test
+      jdk: openjdk11
+    - stage: test
       jdk: oraclejdk11
     - stage: test
-      jdk: openjdk11
+      jdk: openjdk12
