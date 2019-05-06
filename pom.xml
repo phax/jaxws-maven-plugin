@@ -323,8 +323,8 @@
     <profile>
       <id>jdk9up</id>
       <activation>
-        <!-- use "13)" to support versions like "12.0.1" -->
-        <jdk>[9,13)</jdk>
+        <!-- version 9 onwards -->
+        <jdk>[9,)</jdk>
       </activation>
       <properties>
         <jaxws-tools.version>2.3.2</jaxws-tools.version>
