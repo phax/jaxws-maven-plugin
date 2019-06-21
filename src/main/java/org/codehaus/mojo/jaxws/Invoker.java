@@ -55,6 +55,7 @@ import java.util.logging.Logger;
  */
 public final class Invoker
 {
+  private static final Logger LOGGER = Logger.getLogger (Invoker.class.getName ());
 
   public static void main (final String... args) throws Exception
   {
@@ -76,7 +77,7 @@ public final class Invoker
       idx = 3;
     }
 
-    final URLClassLoader cl = new URLClassLoader (toUrls (cp));
+    final URLClassLoader cl = new URLClassLoader (_toUrls (cp));
 
     // save original classloader and java.class.path property
     final ClassLoader orig = Thread.currentThread ().getContextClassLoader ();
@@ -95,37 +96,17 @@ public final class Invoker
       final String [] wsargs = new String [args.length - idx];
       System.arraycopy (args, idx, wsargs, 0, args.length - idx);
 
-      System.exit ((Boolean) runMethod.invoke (tool, new Object [] { wsargs }) ? 0 : 1);
+      final Boolean result = (Boolean) runMethod.invoke (tool, new Object [] { wsargs });
+      System.exit (result.booleanValue () ? 0 : 1);
     }
-    catch (final NoSuchMethodException ex)
+    catch (final NoSuchMethodException | SecurityException | ClassNotFoundException | InstantiationException
+        | IllegalAccessException | IllegalArgumentException ex)
     {
-      logSevere (ex);
-    }
-    catch (final SecurityException ex)
-    {
-      logSevere (ex);
-    }
-    catch (final ClassNotFoundException ex)
-    {
-      logSevere (ex);
-    }
-    catch (final InstantiationException ex)
-    {
-      logSevere (ex);
-    }
-    catch (final IllegalAccessException ex)
-    {
-      logSevere (ex);
-    }
-    catch (final IllegalArgumentException ex)
-    {
-      logSevere (ex);
+      LOGGER.log (Level.SEVERE, null, ex);
     }
     catch (final InvocationTargetException ex)
     {
-      final Exception rex = new RuntimeException ();
-      rex.initCause (ex);
-      throw ex;
+      throw new RuntimeException (ex);
     }
     finally
     {
@@ -134,12 +115,7 @@ public final class Invoker
     }
   }
 
-  private static void logSevere (final Exception ex)
-  {
-    Logger.getLogger (Invoker.class.getName ()).log (Level.SEVERE, null, ex);
-  }
-
-  private static URL [] toUrls (final String c)
+  private static URL [] _toUrls (final String c)
   {
     final List <URL> urls = new ArrayList <> ();
     for (final String s : c.split (File.pathSeparator))
@@ -150,7 +126,7 @@ public final class Invoker
       }
       catch (final MalformedURLException ex)
       {
-        Logger.getLogger (Invoker.class.getName ()).log (Level.SEVERE, null, ex);
+        LOGGER.log (Level.SEVERE, null, ex);
       }
     }
     return urls.toArray (new URL [0]);

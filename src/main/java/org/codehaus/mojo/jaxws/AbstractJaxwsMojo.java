@@ -442,14 +442,14 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
       final InvokerCP classpath = getInvokerCP ();
       if (!isModular ())
       {
-        cmd.createArg ().setValue ("-Xbootclasspath/p:" + classpath.ecp);
+        cmd.createArg ().setValue ("-Xbootclasspath/p:" + classpath.m_sEndorsedCP);
       }
       cmd.createArg ().setValue ("-cp");
-      cmd.createArg ().setValue (classpath.invokerPath);
+      cmd.createArg ().setValue (classpath.m_sInvokerPath);
       cmd.createArg ().setLine (Invoker.class.getCanonicalName ());
       cmd.createArg ().setLine (getMain ());
       final String extraCp = getExtraClasspath ();
-      final String cp = ((extraCp != null) ? (extraCp + File.pathSeparator) : "") + classpath.cp;
+      final String cp = ((extraCp != null) ? (extraCp + File.pathSeparator) : "") + classpath.m_sCP;
       try
       {
         final File pathFile = createPathFile (cp);
@@ -505,7 +505,7 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
     }
   }
 
-  private boolean isModular ()
+  private static boolean isModular ()
   {
     try
     {
@@ -567,9 +567,7 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
 
     // add custom invoker path to normal classpath
     if (cp.length () > 0)
-    {
       cp.append (File.pathSeparator);
-    }
     cp.append (invokerPath);
 
     // don't forget tools.jar
@@ -583,9 +581,7 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
     if (toolsJar.exists ())
     {
       if (cp.length () > 0)
-      {
         cp.append (File.pathSeparator);
-      }
       cp.append (toolsJar.getAbsolutePath ());
     }
 
@@ -611,21 +607,21 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
     return new InvokerCP (ecp.toString (), cp.toString (), invokerPath);
   }
 
-  private static class InvokerCP
+  private static final class InvokerCP
   {
-    public final String ecp;
-    public final String cp;
-    public final String invokerPath;
+    public final String m_sEndorsedCP;
+    public final String m_sCP;
+    public final String m_sInvokerPath;
 
     public InvokerCP (final String ecp, final String cp, final String invokerPath)
     {
-      this.ecp = ecp;
-      this.cp = cp;
-      this.invokerPath = invokerPath;
+      m_sEndorsedCP = ecp;
+      m_sCP = cp;
+      m_sInvokerPath = invokerPath;
     }
   }
 
-  private String getJavaExec ()
+  private static String getJavaExec ()
   {
     return isWindows () ? "java.exe" : "java";
   }
@@ -665,19 +661,19 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
     return f;
   }
 
-  private boolean isWindows ()
+  private static boolean isWindows ()
   {
     return Os.isFamily (Os.FAMILY_WINDOWS);
   }
 
-  protected String getCPasString (final Collection <Artifact> artifacts)
+  protected static String getCPasString (final Collection <Artifact> artifacts)
   {
     return artifacts.stream ()
                     .map (a -> a.getFile ().getAbsolutePath ())
                     .collect (Collectors.joining (File.pathSeparator));
   }
 
-  private String toString (final Collection <Artifact> artifacts)
+  private static String toString (final Collection <Artifact> artifacts)
   {
     return artifacts.stream ()
                     .map (a -> String.join (":", a.getGroupId (), a.getArtifactId (), a.getVersion ()))
