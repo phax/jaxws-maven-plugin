@@ -436,7 +436,7 @@ abstract class AbstractJaxwsMojo extends AbstractMojo
       {
         for (final String arg : vmArgs)
         {
-          cmd.createArg ().setLine (arg);
+          cmd.createArg ().setValue (arg);
         }
       }
       final InvokerCP classpath = getInvokerCP ();
