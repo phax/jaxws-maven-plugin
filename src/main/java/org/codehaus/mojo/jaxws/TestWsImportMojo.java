@@ -49,110 +49,108 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 /**
  * Parses wsdl and binding files and generates Java code needed to access it
  * (for tests).
- *
  * <p>
- * <code>${maven.test.skip}</code> property is honored. If it is set, code generation is skipped.
+ * <code>${maven.test.skip}</code> property is honored. If it is set, code
+ * generation is skipped.
  * </p>
  *
  * @author Kohsuke Kawaguchi
  */
-@Mojo( name = "wsimport-test", defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
-        requiresDependencyResolution = ResolutionScope.TEST, threadSafe = true )
-public class TestWsImportMojo
-    extends WsImportMojo
+@Mojo (name = "wsimport-test", defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES, requiresDependencyResolution = ResolutionScope.TEST, threadSafe = true)
+public class TestWsImportMojo extends WsImportMojo
 {
+  /**
+   * Specify where to place output generated classes. Use
+   * <code>xnocompile</code> to turn this off.
+   */
+  @Parameter (defaultValue = "${project.build.testOutputDirectory}")
+  private File destDir;
 
-    /**
-     * Specify where to place output generated classes. Use <code>xnocompile</code>
-     * to turn this off.
-     */
-    @Parameter( defaultValue = "${project.build.testOutputDirectory}" )
-    private File destDir;
+  /**
+   * Specify where to place generated source files, keep is turned on with this
+   * option.
+   */
+  @Parameter (defaultValue = "${project.build.directory}/generated-sources/test-wsimport")
+  private File sourceDestDir;
 
-    /**
-     * Specify where to place generated source files, keep is turned on with this option.
-     */
-    @Parameter( defaultValue = "${project.build.directory}/generated-sources/test-wsimport" )
-    private File sourceDestDir;
+  /**
+   * Specify where to generate JWS implementation file.
+   */
+  @Parameter (defaultValue = "${project.build.testSourceDirectory}")
+  private File implDestDir;
 
-    /**
-     * Specify where to generate JWS implementation file.
-     */
-    @Parameter( defaultValue = "${project.build.testSourceDirectory}" )
-    private File implDestDir;
+  /**
+   * Set this to "true" to bypass code generation.
+   */
+  @Parameter (property = "maven.test.skip")
+  private boolean skip;
 
-    /**
-     * Set this to "true" to bypass code generation.
-     */
-    @Parameter( property = "maven.test.skip" )
-    private boolean skip;
+  /**
+   * Either ${build.outputDirectory} or ${build.testOutputDirectory}.
+   */
+  @Override
+  protected File getDestDir ()
+  {
+    return destDir;
+  }
 
-    /**
-     * Either ${build.outputDirectory} or ${build.testOutputDirectory}.
-     */
-    @Override
-    protected File getDestDir()
+  /**
+   * ${project.build.directory}/jaxws/wsimport/test.
+   */
+  @Override
+  protected File getSourceDestDir ()
+  {
+    return sourceDestDir;
+  }
+
+  @Override
+  protected void addSourceRoot (final String sourceDir)
+  {
+    if (!project.getTestCompileSourceRoots ().contains (sourceDir))
     {
-        return destDir;
+      getLog ().debug ("adding test src root: " + sourceDir);
+      project.addTestCompileSourceRoot (sourceDir);
     }
-
-    /**
-     * ${project.build.directory}/jaxws/wsimport/test.
-     */
-    @Override
-    protected File getSourceDestDir()
+    else
     {
-        return sourceDestDir;
+      getLog ().debug ("existing test src root: " + sourceDir);
     }
+  }
 
-    @Override
-    protected void addSourceRoot( String sourceDir )
-    {
-        if ( !project.getTestCompileSourceRoots().contains( sourceDir ) )
-        {
-            getLog().debug( "adding test src root: " + sourceDir );
-            project.addTestCompileSourceRoot( sourceDir );
-        }
-        else
-        {
-            getLog().debug( "existing test src root: " + sourceDir );
-        }
-    }
+  @Override
+  protected File getDefaultSrcOut ()
+  {
+    return new File (project.getBuild ().getDirectory (), "generated-sources/test-wsimport");
+  }
 
-    @Override
-    protected File getDefaultSrcOut()
-    {
-        return new File( project.getBuild().getDirectory(), "generated-sources/test-wsimport" );
-    }
+  @Override
+  protected File getImplDestDir ()
+  {
+    return implDestDir;
+  }
 
-    @Override
-    protected File getImplDestDir()
-    {
-        return implDestDir;
-    }
+  @Override
+  protected List <String> getWSDLFileLookupClasspathElements ()
+  {
+    return project.getDependencyArtifacts ()
+                  .stream ()
+                  .filter (a -> !Artifact.SCOPE_RUNTIME.equals (a.getScope ()) && null != a.getFile ())
+                  .map (a -> a.getFile ().getPath ())
+                  .collect (Collectors.toList ());
+  }
 
-    @Override
-    protected List<String> getWSDLFileLookupClasspathElements() 
+  @Override
+  public void executeJaxws () throws MojoExecutionException
+  {
+    // if maven.test.skip is set test compilation is not called, so
+    // no need to generate sources/classes
+    if (skip)
     {
-        return project.getDependencyArtifacts().stream()
-                .filter( a -> !Artifact.SCOPE_RUNTIME.equals(a.getScope() )
-                        && null != a.getFile() )
-                .map( a -> a.getFile().getPath() ).collect( Collectors.toList() );
+      getLog ().info ("Skipping tests, nothing to do.");
     }
-
-    @Override
-    public void executeJaxws()
-        throws MojoExecutionException
+    else
     {
-        // if maven.test.skip is set test compilation is not called, so
-        // no need to generate sources/classes
-        if ( skip )
-        {
-            getLog().info( "Skipping tests, nothing to do." );
-        }
-        else
-        {
-            super.executeJaxws();
-        }
+      super.executeJaxws ();
     }
+  }
 }

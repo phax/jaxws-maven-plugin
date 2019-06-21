@@ -67,658 +67,679 @@ import org.codehaus.plexus.util.Os;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.DefaultConsumer;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 /**
- *
  * @author dantran (dantran@apache.org)
  */
-abstract class AbstractJaxwsMojo
-    extends AbstractMojo
+abstract class AbstractJaxwsMojo extends AbstractMojo
 {
+  /**
+   * The Maven Project Object.
+   */
+  @Parameter (defaultValue = "${project}", readonly = true, required = true)
+  protected MavenProject project;
 
-    /**
-     * The Maven Project Object.
-     */
-    @Parameter( defaultValue = "${project}", readonly = true, required = true )
-    protected MavenProject project;
+  /**
+   * Output messages about what the tool is doing.
+   */
+  @Parameter (defaultValue = "false")
+  protected boolean verbose;
 
-    /**
-     * Output messages about what the tool is doing.
-     */
-    @Parameter( defaultValue = "false" )
-    protected boolean verbose;
+  /**
+   * Keep generated files.
+   */
+  @Parameter (defaultValue = "true")
+  protected boolean keep;
 
-    /**
-     * Keep generated files.
-     */
-    @Parameter( defaultValue = "true" )
-    protected boolean keep;
+  /**
+   * Allow to use the JAXWS Vendor Extensions.
+   */
+  @Parameter (defaultValue = "false")
+  private boolean extension;
 
-    /**
-     * Allow to use the JAXWS Vendor Extensions.
-     */
-    @Parameter( defaultValue = "false" )
-    private boolean extension;
+  /**
+   * Specify character encoding used by source files.
+   */
+  @Parameter (defaultValue = "${project.build.sourceEncoding}")
+  protected String encoding;
 
-    /**
-     * Specify character encoding used by source files.
-     */
-    @Parameter( defaultValue = "${project.build.sourceEncoding}" )
-    protected String encoding;
+  /**
+   * Specify optional command-line options.
+   * <p>
+   * Multiple elements can be specified, and each token must be placed in its
+   * own list.
+   * </p>
+   */
+  @Parameter
+  private List <String> args;
 
-    /**
-     * Specify optional command-line options.
-     * <p>
-     * Multiple elements can be specified, and each token must be placed in its own list.
-     * </p>
-     */
-    @Parameter
-    private List<String> args;
+  /**
+   * Specify optional JVM options.
+   * <p>
+   * Multiple elements can be specified, and each token must be placed in its
+   * own list.
+   * </p>
+   */
+  @Parameter
+  private List <String> vmArgs;
 
-    /**
-     * Specify optional JVM options.
-     * <p>
-     * Multiple elements can be specified, and each token must be placed in its own list.
-     * </p>
-     */
-    @Parameter
-    private List<String> vmArgs;
+  /**
+   * Path to the executable. Should be either <code>wsgen</code> or
+   * <code>wsimport</code> but basically any script which will understand passed
+   * in arguments will work.
+   *
+   * @since 2.2.1
+   */
+  @Parameter
+  private File executable;
 
-    /**
-     * Path to the executable. Should be either <code>wsgen</code> or <code>wsimport</code>
-     * but basically any script which will understand passed in arguments
-     * will work.
-     *
-     * @since 2.2.1
-     */
-    @Parameter
-    private File executable;
+  /**
+   * Information about this plugin, used to lookup this plugin's dependencies
+   * from the currently executing project.
+   *
+   * @since 2.3.1
+   */
+  @Parameter (defaultValue = "${plugin}", readonly = true)
+  protected PluginDescriptor pluginDescriptor;
 
-    /**
-     * Information about this plugin, used to lookup this plugin's dependencies
-     * from the currently executing project.
-     *
-     * @since 2.3.1
-     */
-    @Parameter( defaultValue = "${plugin}", readonly = true )
-    protected PluginDescriptor pluginDescriptor;
+  /**
+   * Entry point for toolchains, to get JDK toolchain
+   */
+  @Component
+  private ToolchainManager toolchainManager;
 
-    /**
-     * Entry point for toolchains, to get JDK toolchain
-     */
-    @Component
-    private ToolchainManager toolchainManager;
+  /**
+   * If a JDK toolchain is found, by default, it is used to get
+   * <code>java</code> executable with its <code>tools.jar</code>. But if set to
+   * <code>true</code>, it is used it to find <code>wsgen</code> and
+   * <code>wsimport</code> executables.
+   *
+   * @since 2.4
+   */
+  @Parameter (defaultValue = "false")
+  private boolean useJdkToolchainExecutable;
 
-    /**
-     * If a JDK toolchain is found, by default, it is used to get <code>java</code> executable with its
-     * <code>tools.jar</code>. But if set to <code>true</code>, it is used it to find <code>wsgen</code>
-     * and <code>wsimport</code> executables.
-     *
-     * @since 2.4
-     */
-    @Parameter( defaultValue = "false" )
-    private boolean useJdkToolchainExecutable;
+  /**
+   * The current build session instance. This is used for toolchain manager API
+   * calls.
+   */
+  @Parameter (defaultValue = "${session}", readonly = true, required = true)
+  protected MavenSession session;
 
-    /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter( defaultValue = "${session}", readonly = true, required = true )
-    protected MavenSession session;
+  // arguments supported by Metro 2.2/JAXWS RI 2.2.6
+  private static final List <String> METRO_22 = new ArrayList <> ();
 
-    // arguments supported by Metro 2.2/JAXWS RI 2.2.6
-    private static final List<String> METRO_22 = new ArrayList<>();
+  // arguments supported by Metro 2.2.1/JAXWS RI 2.2.7
+  private static final List <String> METRO_221 = new ArrayList <> ();
 
-    // arguments supported by Metro 2.2.1/JAXWS RI 2.2.7
-    private static final List<String> METRO_221 = new ArrayList<>();
+  // arguments supported by Metro 2.3/JAXWS RI 2.2.8
+  private static final List <String> METRO_23 = new ArrayList <> ();
 
-    // arguments supported by Metro 2.3/JAXWS RI 2.2.8
-    private static final List<String> METRO_23 = new ArrayList<>();
+  static
+  {
+    METRO_22.add ("-encoding");
+    METRO_22.add ("-clientjar");
+    METRO_22.add ("-generateJWS");
+    METRO_22.add ("-implDestDir");
+    METRO_22.add ("-implServiceName");
+    METRO_22.add ("-implPortName");
 
-    static
+    METRO_221.addAll (METRO_22);
+    METRO_221.add ("-XdisableAuthenticator");
+
+    METRO_23.addAll (METRO_221);
+    METRO_23.add ("-x");
+  }
+
+  /**
+   * Main class of the tool to launch when launched as java command.
+   *
+   * @return the class name
+   */
+  protected abstract String getMain ();
+
+  /**
+   * Name of the tool to run when launched as JDK executable from JDK Toolchain.
+   *
+   * @return the tool name
+   */
+  protected abstract String getToolName ();
+
+  /**
+   * Either <code>${build.outputDirectory}</code> or
+   * <code>${build.testOutputDirectory}</code>.
+   *
+   * @return the destination directory
+   */
+  protected abstract File getDestDir ();
+
+  protected abstract File getSourceDestDir ();
+
+  protected void addSourceRoot (final String sourceDir)
+  {
+    if (!project.getCompileSourceRoots ().contains (sourceDir))
     {
-        METRO_22.add( "-encoding" );
-        METRO_22.add( "-clientjar" );
-        METRO_22.add( "-generateJWS" );
-        METRO_22.add( "-implDestDir" );
-        METRO_22.add( "-implServiceName" );
-        METRO_22.add( "-implPortName" );
+      getLog ().debug ("adding src root: " + sourceDir);
+      project.addCompileSourceRoot (sourceDir);
+    }
+    else
+    {
+      getLog ().debug ("existing src root: " + sourceDir);
+    }
+  }
 
-        METRO_221.addAll( METRO_22 );
-        METRO_221.add( "-XdisableAuthenticator" );
+  protected abstract File getDefaultSrcOut ();
 
-        METRO_23.addAll( METRO_221 );
-        METRO_23.add( "-x" );
+  /**
+   * Checks if compilation after code generation and let generated sources be
+   * compiled by Maven during compilation phase.
+   *
+   * @return true if compilation should not be done by the JAX-WS tool
+   */
+  protected abstract boolean isXnocompile ();
+
+  protected String getExtraClasspath ()
+  {
+    return null;
+  }
+
+  protected boolean isExtensionOn ()
+  {
+    return extension;
+  }
+
+  protected List <String> getCommonArgs () throws MojoExecutionException
+  {
+    final List <String> commonArgs = new ArrayList <> ();
+
+    if (!isDefaultSrc (getSourceDestDir ()) || keep)
+    {
+      commonArgs.add ("-keep");
+      commonArgs.add ("-s");
+      commonArgs.add ("'" + getSourceDestDir ().getAbsolutePath () + "'");
+      if (!getSourceDestDir ().mkdirs () && !getSourceDestDir ().exists ())
+      {
+        getLog ().warn ("Cannot create directory: " + getSourceDestDir ().getAbsolutePath ());
+      }
+      addSourceRoot (getSourceDestDir ().getAbsolutePath ());
     }
 
-    /**
-     * Main class of the tool to launch when launched as java command.
-     * @return the class name
-     */
-    protected abstract String getMain();
-
-    /**
-     * Name of the tool to run when launched as JDK executable from JDK Toolchain.
-     * @return the tool name
-     */
-    protected abstract String getToolName();
-
-    /**
-     * Either <code>${build.outputDirectory}</code> or <code>${build.testOutputDirectory}</code>.
-     * @return the destination directory
-     */
-    protected abstract File getDestDir();
-
-    protected abstract File getSourceDestDir();
-
-    protected void addSourceRoot( String sourceDir )
+    final File destDir = getDestDir ();
+    if (!destDir.mkdirs () && !destDir.exists ())
     {
-        if ( !project.getCompileSourceRoots().contains( sourceDir ) )
+      getLog ().warn ("Cannot create directory: " + destDir.getAbsolutePath ());
+    }
+    commonArgs.add ("-d");
+    commonArgs.add ("'" + destDir.getAbsolutePath () + "'");
+
+    if (verbose)
+    {
+      commonArgs.add ("-verbose");
+    }
+
+    if (isArgSupported ("-encoding"))
+    {
+      if (encoding != null)
+      {
+        maybeUnsupportedOption ("-encoding", encoding, commonArgs);
+      }
+      else
+      {
+        getLog ().warn ("Using platform encoding (" +
+                        System.getProperty ("file.encoding") +
+                        "), build is platform dependent!");
+      }
+    }
+
+    if (isExtensionOn ())
+    {
+      commonArgs.add ("-extension");
+    }
+
+    if (isXnocompile ())
+    {
+      commonArgs.add ("-Xnocompile");
+    }
+
+    // add additional command line options
+    if (args != null)
+    {
+      for (final String arg : args)
+      {
+        commonArgs.add (arg);
+      }
+    }
+
+    return commonArgs;
+  }
+
+  protected boolean isArgSupported (final String arg) throws MojoExecutionException
+  {
+    // by default, use latest version supported args
+    List <String> supportedArgs = METRO_23;
+
+    // then try to find old known versions
+    // try Metro first
+    Artifact a = pluginDescriptor.getArtifactMap ().get ("org.glassfish.metro:webservices-tools");
+    String v = null;
+    if (a != null)
+    {
+      final ArtifactVersion av = getSelectedVersion (a);
+      v = av.toString ();
+      if (av.getMajorVersion () == 2 && av.getMinorVersion () == 2)
+      {
+        supportedArgs = av.getIncrementalVersion () == 0 ? METRO_22 : METRO_221;
+      }
+    }
+    else
+    {
+      // fallback to RI
+      a = pluginDescriptor.getArtifactMap ().get ("com.sun.xml.ws:jaxws-tools");
+      final ArtifactVersion av = getSelectedVersion (a);
+      v = av.toString ();
+      if (av.getMajorVersion () == 2 && av.getMinorVersion () == 2)
+      {
+        if (av.getIncrementalVersion () == 6)
         {
-            getLog().debug( "adding src root: " + sourceDir );
-            project.addCompileSourceRoot( sourceDir );
+          supportedArgs = METRO_22;
         }
         else
-        {
-            getLog().debug( "existing src root: " + sourceDir );
-        }
+          if (av.getIncrementalVersion () == 7)
+          {
+            supportedArgs = METRO_221;
+          }
+      }
     }
 
-    protected abstract File getDefaultSrcOut();
-
-    /**
-     * Checks if compilation after code generation and let generated sources be
-     * compiled by Maven during compilation phase.
-     * @return true if compilation should not be done by the JAX-WS tool
-     */
-    protected abstract boolean isXnocompile();
-
-    protected String getExtraClasspath()
+    final boolean isSupported = supportedArgs.contains (arg);
+    if (!isSupported)
     {
-        return null;
+      getLog ().warn ("'" + arg + "' is not supported by " + a.getArtifactId () + ":" + v);
     }
+    return isSupported;
+  }
 
-    protected boolean isExtensionOn()
+  private static ArtifactVersion getSelectedVersion (final Artifact artifact) throws MojoExecutionException
+  {
+    try
     {
-        return extension;
+      return artifact.getSelectedVersion ();
     }
-
-    protected List<String> getCommonArgs()
-        throws MojoExecutionException
+    catch (final OverConstrainedVersionException ex)
     {
-        List<String> commonArgs = new ArrayList<>();
-
-        if ( !isDefaultSrc( getSourceDestDir() ) || keep )
-        {
-            commonArgs.add( "-keep" );
-            commonArgs.add( "-s" );
-            commonArgs.add( "'" + getSourceDestDir().getAbsolutePath() + "'" );
-            if ( !getSourceDestDir().mkdirs() && !getSourceDestDir().exists() )
-            {
-                getLog().warn( "Cannot create directory: " + getSourceDestDir().getAbsolutePath() );
-            }
-            addSourceRoot( getSourceDestDir().getAbsolutePath() );
-        }
-
-        File destDir = getDestDir();
-        if ( !destDir.mkdirs() && !destDir.exists() )
-        {
-            getLog().warn( "Cannot create directory: " + destDir.getAbsolutePath() );
-        }
-        commonArgs.add( "-d" );
-        commonArgs.add( "'" + destDir.getAbsolutePath() + "'" );
-
-        if ( verbose )
-        {
-            commonArgs.add( "-verbose" );
-        }
-
-        if ( isArgSupported( "-encoding" ) )
-        {
-            if ( encoding != null )
-            {
-                maybeUnsupportedOption( "-encoding", encoding, commonArgs );
-            }
-            else
-            {
-                getLog().warn( "Using platform encoding (" + System.getProperty( "file.encoding" )
-                    + "), build is platform dependent!" );
-            }
-        }
-
-        if ( isExtensionOn() )
-        {
-            commonArgs.add( "-extension" );
-        }
-
-        if ( isXnocompile() )
-        {
-            commonArgs.add( "-Xnocompile" );
-        }
-
-        // add additional command line options
-        if ( args != null )
-        {
-            for ( String arg : args )
-            {
-                commonArgs.add( arg );
-            }
-        }
-
-        return commonArgs;
+      throw new MojoExecutionException (ex.getMessage (), ex);
     }
+  }
 
-    protected boolean isArgSupported( String arg )
-        throws MojoExecutionException
+  private boolean isDefaultSrc (final File srcout)
+  {
+    return srcout.equals (getDefaultSrcOut ());
+  }
+
+  @Override
+  public final void execute () throws MojoExecutionException, MojoFailureException
+  {
+    if (executable == null && getJdkToolchain () != null && useJdkToolchainExecutable)
     {
-        // by default, use latest version supported args
-        List<String> supportedArgs = METRO_23;
-
-        // then try to find old known versions
-        // try Metro first
-        Artifact a = pluginDescriptor.getArtifactMap().get( "org.glassfish.metro:webservices-tools" );
-        String v = null;
-        if ( a != null )
-        {
-            ArtifactVersion av = getSelectedVersion( a );
-            v = av.toString();
-            if ( av.getMajorVersion() == 2 && av.getMinorVersion() == 2 )
-            {
-                supportedArgs = av.getIncrementalVersion() == 0 ? METRO_22 : METRO_221;
-            }
-        }
-        else
-        {
-            // fallback to RI
-            a = pluginDescriptor.getArtifactMap().get( "com.sun.xml.ws:jaxws-tools" );
-            ArtifactVersion av = getSelectedVersion( a );
-            v = av.toString();
-            if ( av.getMajorVersion() == 2 && av.getMinorVersion() == 2 )
-            {
-                if ( av.getIncrementalVersion() == 6 )
-                {
-                    supportedArgs = METRO_22;
-                }
-                else if ( av.getIncrementalVersion() == 7 )
-                {
-                    supportedArgs = METRO_221;
-                }
-            }
-        }
-
-        boolean isSupported = supportedArgs.contains( arg );
-        if ( !isSupported )
-        {
-            getLog().warn( "'" + arg + "' is not supported by " + a.getArtifactId() + ":" + v );
-        }
-        return isSupported;
+      // get executable from JDK toolchain
+      executable = new File (getJdkToolchain ().findTool (getToolName ()));
     }
 
-    private static ArtifactVersion getSelectedVersion( Artifact artifact )
-        throws MojoExecutionException
+    executeJaxws ();
+  }
+
+  public abstract void executeJaxws () throws MojoExecutionException, MojoFailureException;
+
+  protected void exec (final List <String> arguments) throws MojoExecutionException
+  {
+    String launched = "";
+    final Commandline cmd = new Commandline ();
+
+    if (executable != null)
     {
-        try
+      // use JDK wsgen/wsimport or equivalent executable
+      launched = executable.getName ();
+      if (executable.isFile () && executable.canExecute ())
+      {
+        cmd.setExecutable (executable.getAbsolutePath ());
+        if (getExtraClasspath () != null)
         {
-            return artifact.getSelectedVersion();
+          cmd.createArg ().setLine ("-cp");
+          cmd.createArg ().setValue (getExtraClasspath ());
         }
-        catch ( OverConstrainedVersionException ex )
-        {
-            throw new MojoExecutionException( ex.getMessage(), ex );
-        }
+      }
+      else
+      {
+        throw new MojoExecutionException ("Cannot execute: " + executable.getAbsolutePath ());
+      }
     }
-
-    private boolean isDefaultSrc( File srcout )
+    else
     {
-        return srcout.equals( getDefaultSrcOut() );
+      // use tool's class through Invoker as java execution
+      launched = getMain ();
+
+      if (getJdkToolchain () == null)
+      {
+        // use java executable from running Maven
+        cmd.setExecutable (new File (new File (System.getProperty ("java.home"), "bin"),
+                                     getJavaExec ()).getAbsolutePath ());
+      }
+      else
+      {
+        // use java executable from current JDK toolchain
+        cmd.setExecutable (getJdkToolchain ().findTool ("java"));
+      }
+
+      // add additional JVM options
+      if (vmArgs != null)
+      {
+        for (final String arg : vmArgs)
+        {
+          cmd.createArg ().setLine (arg);
+        }
+      }
+      final InvokerCP classpath = getInvokerCP ();
+      if (!isModular ())
+      {
+        cmd.createArg ().setValue ("-Xbootclasspath/p:" + classpath.ecp);
+      }
+      cmd.createArg ().setValue ("-cp");
+      cmd.createArg ().setValue (classpath.invokerPath);
+      cmd.createArg ().setLine (Invoker.class.getCanonicalName ());
+      cmd.createArg ().setLine (getMain ());
+      final String extraCp = getExtraClasspath ();
+      final String cp = ((extraCp != null) ? (extraCp + File.pathSeparator) : "") + classpath.cp;
+      try
+      {
+        final File pathFile = createPathFile (cp);
+        cmd.createArg ().setLine ("-pathfile " + "'" + pathFile.getAbsolutePath () + "'");
+      }
+      catch (final IOException ioe)
+      {
+        // creation of temporary file can fail, in such case just put everything
+        // on cp
+        cmd.createArg ().setValue ("-cp");
+        cmd.createArg ().setValue (cp);
+      }
     }
 
-    @Override
-    public final void execute()
-        throws MojoExecutionException, MojoFailureException
+    cmd.setWorkingDirectory (project.getBasedir ());
+    for (final String arg : arguments)
     {
-        if ( executable == null && getJdkToolchain() != null && useJdkToolchainExecutable )
-        {
-            // get executable from JDK toolchain
-            executable = new File( getJdkToolchain().findTool( getToolName() ) );
-        }
-
-        executeJaxws();
+      cmd.createArg ().setLine (arg);
     }
 
-    public abstract void executeJaxws()
-        throws MojoExecutionException, MojoFailureException;
-
-    protected void exec( List<String> arguments )
-        throws MojoExecutionException
+    try
     {
-        String launched = "";
-        Commandline cmd = new Commandline();
+      final String fullCommand = cmd.toString ();
+      if (isWindows () && 8191 <= fullCommand.length ())
+      {
+        getLog ().warn ("Length of Windows command line is limited to 8191 characters, but current command has " +
+                        fullCommand.length () +
+                        " characters:");
+        getLog ().warn (fullCommand);
+      }
+      else
+      {
+        getLog ().debug (fullCommand);
+      }
 
-        if ( executable != null )
-        {
-            // use JDK wsgen/wsimport or equivalent executable
-            launched = executable.getName();
-            if ( executable.isFile() && executable.canExecute() )
-            {
-                cmd.setExecutable( executable.getAbsolutePath() );
-                if ( getExtraClasspath() != null )
-                {
-                    cmd.createArg().setLine( "-cp" );
-                    cmd.createArg().setValue( getExtraClasspath() );
-                }
-            }
-            else
-            {
-                throw new MojoExecutionException( "Cannot execute: " + executable.getAbsolutePath() );
-            }
-        }
-        else
-        {
-            // use tool's class through Invoker as java execution
-            launched = getMain();
-
-            if ( getJdkToolchain() == null )
-            {
-                // use java executable from running Maven
-                cmd.setExecutable( new File( new File( System.getProperty( "java.home" ), "bin" ),
-                                             getJavaExec() ).getAbsolutePath() );
-            }
-            else
-            {
-                // use java executable from current JDK toolchain
-                cmd.setExecutable( getJdkToolchain().findTool( "java" ) );
-            }
-
-            // add additional JVM options
-            if ( vmArgs != null )
-            {
-                for ( String arg : vmArgs )
-                {
-                    cmd.createArg().setLine( arg );
-                }
-            }
-            InvokerCP classpath = getInvokerCP();
-            if ( !isModular() ) {
-                cmd.createArg().setValue( "-Xbootclasspath/p:" + classpath.ecp );
-            }
-            cmd.createArg().setValue( "-cp" );
-            cmd.createArg().setValue( classpath.invokerPath );
-            cmd.createArg().setLine( Invoker.class.getCanonicalName() );
-            cmd.createArg().setLine( getMain() );
-            String extraCp = getExtraClasspath();
-            String cp = ( ( extraCp != null ) ? ( extraCp + File.pathSeparator ) : "" ) + classpath.cp;
-            try
-            {
-                File pathFile = createPathFile( cp );
-                cmd.createArg().setLine( "-pathfile " + "'" + pathFile.getAbsolutePath() +  "'" );
-            }
-            catch ( IOException ioe )
-            {
-                // creation of temporary file can fail, in such case just put everything on cp
-                cmd.createArg().setValue( "-cp" );
-                cmd.createArg().setValue( cp );
-            }
-        }
-
-        cmd.setWorkingDirectory( project.getBasedir() );
-        for ( String arg : arguments )
-        {
-            cmd.createArg().setLine( arg );
-        }
-
-        try
-        {
-            String fullCommand = cmd.toString();
-            if ( isWindows() && 8191 <= fullCommand.length() )
-            {
-                getLog().warn( "Length of Windows command line is limited to 8191 characters, but current command has "
-                    + fullCommand.length() + " characters:" );
-                getLog().warn( fullCommand );
-            }
-            else
-            {
-                getLog().debug( fullCommand );
-            }
-
-            // The DefaultConsumer class in plexus-utils-3.1.0 first calls
-            // System.out.println() to print the message and then throws an
-            // IOException when System.out.checkError() returns true. This
-            // results in a MojoExecutionException when the plugin is being used
-            // in Eclipse.
-            // In contrary to this the implementation in plexus-utils-3.0.2x
-            // simply calls System.out.println() without further checks...
-            StreamConsumer sc = new StreamConsumer() {
-                public void consumeLine( String line )
-                {
-                    System.out.println( line );
-                }
-            };
-            // StreamConsumer sc = new DefaultConsumer();
-            if ( CommandLineUtils.executeCommandLine( cmd, sc, sc ) != 0 )
-            {
-                throw new MojoExecutionException( "Invocation of " + launched + " failed - check output" );
-            }
-        }
-        catch ( CommandLineException t )
-        {
-            throw new MojoExecutionException( t.getMessage(), t );
-        }
+      // The DefaultConsumer class in plexus-utils-3.1.0 first calls
+      // System.out.println() to print the message and then throws an
+      // IOException when System.out.checkError() returns true. This
+      // results in a MojoExecutionException when the plugin is being used
+      // in Eclipse.
+      // In contrary to this the implementation in plexus-utils-3.0.2x
+      // simply calls System.out.println() without further checks...
+      final StreamConsumer sc = line -> System.out.println (line);
+      // StreamConsumer sc = new DefaultConsumer();
+      if (CommandLineUtils.executeCommandLine (cmd, sc, sc) != 0)
+      {
+        throw new MojoExecutionException ("Invocation of " + launched + " failed - check output");
+      }
     }
-
-    private boolean isModular() {
-        try
-        {
-            Class<?> moduleClass = Class.forName( "java.lang.Module" );
-            return moduleClass != null;
-        }
-        catch ( ClassNotFoundException e )
-        {
-            return false;
-        }
-    }
-
-    protected void maybeUnsupportedOption( String option, String value, List<String> arguments )
+    catch (final CommandLineException t)
     {
-        if ( executable == null )
-        {
-            arguments.add( option );
-            if ( value != null )
-            {
-                arguments.add( value );
-            }
-        }
-        else
-        {
-            getLog().warn( option + " may not supported on older JDKs.\n"
-                + "Use <args> to bypass this warning if you really want to use it." );
-        }
+      throw new MojoExecutionException (t.getMessage (), t);
     }
+  }
 
-    /**
-     * Calculates 3 classpaths used to launch tools as class through Invoker.
-     * @return Invoker's classpath
-     * @see Invoker
-     */
-    private InvokerCP getInvokerCP()
+  private boolean isModular ()
+  {
+    try
     {
-        Set<Artifact> endorsedArtifacts = new HashSet<>();
-        Map<String, Artifact> artifactsMap = new HashMap<>();
-        for ( Artifact a : pluginDescriptor.getArtifacts() )
-        {
-            addArtifactToCp( a, artifactsMap, endorsedArtifacts );
-        }
-
-        StringBuilder cp = new StringBuilder( getCPasString( artifactsMap.values() ) );
-        StringBuilder ecp = new StringBuilder( getCPasString( endorsedArtifacts ) );
-
-        String invokerPath = null;
-        try
-        {
-            invokerPath = Invoker.class.getProtectionDomain().getCodeSource().getLocation().toExternalForm();
-            invokerPath = new URI( invokerPath.substring( 5 ) ).getPath();
-        }
-        catch ( URISyntaxException ex )
-        {
-            throw new RuntimeException( ex );
-        }
-
-        // add custom invoker path to normal classpath
-        if ( cp.length() > 0 ) {
-            cp.append( File.pathSeparator );
-        }
-        cp.append( invokerPath );
-
-        // don't forget tools.jar
-        String javaHome = getJavaHome();
-        File toolsJar = new File( javaHome, "../lib/tools.jar" );
-        if ( !toolsJar.exists() )
-        {
-            toolsJar = new File( javaHome, "lib/tools.jar" );
-        }
-        // Java >= 9 doesn't have a tools.jar anymore
-        if ( toolsJar.exists() ) {
-            if ( cp.length() > 0 ) {
-                cp.append( File.pathSeparator );
-            }
-            cp.append( toolsJar.getAbsolutePath() );
-        }
-
-        if ( getLog().isDebugEnabled() )
-        {
-            getLog().debug( "getInvokerCP():\n"
-                            + "    endorsed: " + toString( endorsedArtifacts ) + "\n"
-                            + "    classpath: " + toString( artifactsMap.values() ) + "\n"
-                            + "    ecp: " + ecp + "\n"
-                            + "    cp: " + cp + "\n"
-                            + "    invokerPath: " + invokerPath );
-        }
-
-        return new InvokerCP( ecp.toString(), cp.toString(), invokerPath );
+      final Class <?> moduleClass = Class.forName ("java.lang.Module");
+      return moduleClass != null;
     }
-
-    private static class InvokerCP
+    catch (final ClassNotFoundException e)
     {
-        public final String ecp;
-
-        public final String cp;
-
-        public final String invokerPath;
-
-        public InvokerCP( String ecp, String cp, String invokerPath )
-        {
-            this.ecp = ecp;
-            this.cp = cp;
-            this.invokerPath = invokerPath;
-        }
+      return false;
     }
+  }
 
-    private String getJavaExec()
+  protected void maybeUnsupportedOption (final String option, final String value, final List <String> arguments)
+  {
+    if (executable == null)
     {
-        return isWindows() ? "java.exe" : "java";
+      arguments.add (option);
+      if (value != null)
+      {
+        arguments.add (value);
+      }
     }
-
-    private String getJavaHome()
+    else
     {
-        // by default, java.home from JDK/JRE running Maven
-        String javaHome = System.getProperty( "java.home" );
-        if ( getJdkToolchain() != null )
-        {
-            // JDK toolchain used
-            File javaExecutable = new File( getJdkToolchain().findTool( "java" ) ); // ${java.home}/bin/java
-            javaHome = javaExecutable.getParentFile().getParent();
-        }
-        return javaHome;
+      getLog ().warn (option +
+                      " may not supported on older JDKs.\n" +
+                      "Use <args> to bypass this warning if you really want to use it.");
     }
+  }
 
-    private File createPathFile( String cp )
-        throws IOException
+  /**
+   * Calculates 3 classpaths used to launch tools as class through Invoker.
+   *
+   * @return Invoker's classpath
+   * @see Invoker
+   */
+  private InvokerCP getInvokerCP ()
+  {
+    final Set <Artifact> endorsedArtifacts = new HashSet <> ();
+    final Map <String, Artifact> artifactsMap = new HashMap <> ();
+    for (final Artifact a : pluginDescriptor.getArtifacts ())
     {
-        File f = File.createTempFile( "jax-ws-mvn-plugin-cp", ".txt" );
-        if ( f.exists() && f.isFile() && !f.delete() )
-        {
-            // this should not happen
-            getLog().warn( "cannot remove obsolete classpath setting file: " + f.getAbsolutePath() );
-        }
-        Properties p = new Properties();
-        p.put( "cp", cp.replace( File.separatorChar, '/' ) );
-        getLog().debug( "stored classpath: " + cp.replace( File.separatorChar, '/' ) );
-        try (FileOutputStream fos = new FileOutputStream( f )) {
-            p.store( fos, null );
-        }
-        catch ( IOException ex )
-        {
-            getLog().error( ex );
-        }
-        return f;
+      addArtifactToCp (a, artifactsMap, endorsedArtifacts);
     }
 
-    private boolean isWindows()
+    final StringBuilder cp = new StringBuilder (getCPasString (artifactsMap.values ()));
+    final StringBuilder ecp = new StringBuilder (getCPasString (endorsedArtifacts));
+
+    String invokerPath = null;
+    try
     {
-        return Os.isFamily( Os.FAMILY_WINDOWS );
+      invokerPath = Invoker.class.getProtectionDomain ().getCodeSource ().getLocation ().toExternalForm ();
+      invokerPath = new URI (invokerPath.substring (5)).getPath ();
     }
-
-    protected String getCPasString( Collection<Artifact> artifacts )
+    catch (final URISyntaxException ex)
     {
-        return artifacts.stream().map( a -> a.getFile().getAbsolutePath() ).collect( Collectors.joining( File.pathSeparator ) );
+      throw new RuntimeException (ex);
     }
 
-    private String toString(Collection<Artifact> artifacts) {
-        return artifacts
-                .stream().map( a -> String.join( ":", a.getGroupId(), a.getArtifactId(), a.getVersion() ) )
-                .collect( Collectors.joining( " " ) );
-    }
-
-    /**
-     * Places the artifact in either the endorsed artifacts set or the normal
-     * artifacts map.  It will only add those in "compile" and "runtime" scope
-     * or those that are specifically endorsed.
-     * 
-     * @param a artifact to sort
-     * @param artifactsMap normal artifacts map
-     * @param endorsedArtifacts endorsed artifacts set
-     */
-    private void addArtifactToCp( Artifact a, Map<String, Artifact> artifactsMap, Set<Artifact> endorsedArtifacts )
+    // add custom invoker path to normal classpath
+    if (cp.length () > 0)
     {
-        if ( !isModular() && isEndorsedArtifact( a ) )
-        {
-            endorsedArtifacts.add( a );
-        }
-        else if ( "compile".equals( a.getScope() ) || "runtime".equals( a.getScope() ) )
-        {
-            artifactsMap.put( a.getGroupId() + ":" + a.getArtifactId(), a );
-        }
+      cp.append (File.pathSeparator);
+    }
+    cp.append (invokerPath);
+
+    // don't forget tools.jar
+    final String javaHome = getJavaHome ();
+    File toolsJar = new File (javaHome, "../lib/tools.jar");
+    if (!toolsJar.exists ())
+    {
+      toolsJar = new File (javaHome, "lib/tools.jar");
+    }
+    // Java >= 9 doesn't have a tools.jar anymore
+    if (toolsJar.exists ())
+    {
+      if (cp.length () > 0)
+      {
+        cp.append (File.pathSeparator);
+      }
+      cp.append (toolsJar.getAbsolutePath ());
     }
 
-    protected void addVmArg( String vmArg )
+    if (getLog ().isDebugEnabled ())
     {
-        if ( vmArgs == null )
-        {
-            vmArgs = new ArrayList<>();
-        }
-        vmArgs.add( vmArg );
+      getLog ().debug ("getInvokerCP():\n" +
+                       "    endorsed: " +
+                       toString (endorsedArtifacts) +
+                       "\n" +
+                       "    classpath: " +
+                       toString (artifactsMap.values ()) +
+                       "\n" +
+                       "    ecp: " +
+                       ecp +
+                       "\n" +
+                       "    cp: " +
+                       cp +
+                       "\n" +
+                       "    invokerPath: " +
+                       invokerPath);
     }
 
-    private boolean isEndorsedArtifact( Artifact a )
-    {
-        return "jaxws-api".equals( a.getArtifactId() )
-                || "jaxb-api".equals( a.getArtifactId() )
-                || "saaj-api".equals( a.getArtifactId() )
-                || "jsr181-api".equals( a.getArtifactId() )
-                || "javax.annotation".equals( a.getArtifactId() )
-                || "javax.annotation-api".equals( a.getArtifactId() )
-                || "webservices-api".equals( a.getArtifactId() )
-                || a.getArtifactId().startsWith( "javax.xml.ws" )
-                || a.getArtifactId().startsWith( "javax.xml.bind" );
-    }
+    return new InvokerCP (ecp.toString (), cp.toString (), invokerPath);
+  }
 
-    private Toolchain getJdkToolchain()
+  private static class InvokerCP
+  {
+    public final String ecp;
+    public final String cp;
+    public final String invokerPath;
+
+    public InvokerCP (final String ecp, final String cp, final String invokerPath)
     {
-        Toolchain tc = null;
-        if ( toolchainManager != null )
-        {
-            tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
-        }
-        return tc;
+      this.ecp = ecp;
+      this.cp = cp;
+      this.invokerPath = invokerPath;
     }
+  }
+
+  private String getJavaExec ()
+  {
+    return isWindows () ? "java.exe" : "java";
+  }
+
+  private String getJavaHome ()
+  {
+    // by default, java.home from JDK/JRE running Maven
+    String javaHome = System.getProperty ("java.home");
+    if (getJdkToolchain () != null)
+    {
+      // JDK toolchain used
+      final File javaExecutable = new File (getJdkToolchain ().findTool ("java")); // ${java.home}/bin/java
+      javaHome = javaExecutable.getParentFile ().getParent ();
+    }
+    return javaHome;
+  }
+
+  private File createPathFile (final String cp) throws IOException
+  {
+    final File f = File.createTempFile ("jax-ws-mvn-plugin-cp", ".txt");
+    if (f.exists () && f.isFile () && !f.delete ())
+    {
+      // this should not happen
+      getLog ().warn ("cannot remove obsolete classpath setting file: " + f.getAbsolutePath ());
+    }
+    final Properties p = new Properties ();
+    p.put ("cp", cp.replace (File.separatorChar, '/'));
+    getLog ().debug ("stored classpath: " + cp.replace (File.separatorChar, '/'));
+    try (FileOutputStream fos = new FileOutputStream (f))
+    {
+      p.store (fos, null);
+    }
+    catch (final IOException ex)
+    {
+      getLog ().error (ex);
+    }
+    return f;
+  }
+
+  private boolean isWindows ()
+  {
+    return Os.isFamily (Os.FAMILY_WINDOWS);
+  }
+
+  protected String getCPasString (final Collection <Artifact> artifacts)
+  {
+    return artifacts.stream ()
+                    .map (a -> a.getFile ().getAbsolutePath ())
+                    .collect (Collectors.joining (File.pathSeparator));
+  }
+
+  private String toString (final Collection <Artifact> artifacts)
+  {
+    return artifacts.stream ()
+                    .map (a -> String.join (":", a.getGroupId (), a.getArtifactId (), a.getVersion ()))
+                    .collect (Collectors.joining (" "));
+  }
+
+  /**
+   * Places the artifact in either the endorsed artifacts set or the normal
+   * artifacts map. It will only add those in "compile" and "runtime" scope or
+   * those that are specifically endorsed.
+   *
+   * @param a
+   *        artifact to sort
+   * @param artifactsMap
+   *        normal artifacts map
+   * @param endorsedArtifacts
+   *        endorsed artifacts set
+   */
+  private void addArtifactToCp (final Artifact a,
+                                final Map <String, Artifact> artifactsMap,
+                                final Set <Artifact> endorsedArtifacts)
+  {
+    if (!isModular () && isEndorsedArtifact (a))
+    {
+      endorsedArtifacts.add (a);
+    }
+    else
+      if ("compile".equals (a.getScope ()) || "runtime".equals (a.getScope ()))
+      {
+        artifactsMap.put (a.getGroupId () + ":" + a.getArtifactId (), a);
+      }
+  }
+
+  protected void addVmArg (final String vmArg)
+  {
+    if (vmArgs == null)
+    {
+      vmArgs = new ArrayList <> ();
+    }
+    vmArgs.add (vmArg);
+  }
+
+  private boolean isEndorsedArtifact (final Artifact a)
+  {
+    return "jaxws-api".equals (a.getArtifactId ()) ||
+           "jaxb-api".equals (a.getArtifactId ()) ||
+           "saaj-api".equals (a.getArtifactId ()) ||
+           "jsr181-api".equals (a.getArtifactId ()) ||
+           "javax.annotation".equals (a.getArtifactId ()) ||
+           "javax.annotation-api".equals (a.getArtifactId ()) ||
+           "webservices-api".equals (a.getArtifactId ()) ||
+           a.getArtifactId ().startsWith ("javax.xml.ws") ||
+           a.getArtifactId ().startsWith ("javax.xml.bind");
+  }
+
+  private Toolchain getJdkToolchain ()
+  {
+    Toolchain tc = null;
+    if (toolchainManager != null)
+    {
+      tc = toolchainManager.getToolchainFromBuildContext ("jdk", session);
+    }
+    return tc;
+  }
 }

@@ -56,7 +56,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 @Mojo (name = "wsgen", defaultPhase = LifecyclePhase.PROCESS_CLASSES, requiresDependencyResolution = ResolutionScope.RUNTIME, threadSafe = true)
 public class MainWsGenMojo extends AbstractWsGenMojo
 {
-
   /**
    * Specify where to place output generated classes. Use
    * <code>xnocompile</code> to turn this off.

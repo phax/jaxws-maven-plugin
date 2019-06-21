@@ -53,7 +53,6 @@ import com.sun.tools.ws.ToolVersion;
  */
 public class MixedITCase
 {
-
   private static final File PROJECTS_DIR = new File (System.getProperty ("it.projects.dir"));
 
   private File project;

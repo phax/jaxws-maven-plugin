@@ -36,39 +36,36 @@
 package org.codehaus.mojo.jaxws;
 
 import java.io.IOException;
+
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.io.xpp3.SettingsXpp3Reader;
-import org.codehaus.mojo.jaxws.WsImportMojo;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author Lukas Jungmann
  */
 public class WsImportMojoTest
 {
+  @Test
+  public void testGetActiveHttpProxy () throws IOException, XmlPullParserException
+  {
+    final SettingsXpp3Reader r = new SettingsXpp3Reader ();
+    Settings s = r.read (WsImportMojoTest.class.getResourceAsStream ("proxy1.xml"));
+    String proxyString = WsImportMojo.getActiveHttpProxy (s);
+    Assert.assertEquals (proxyString, "proxyActive:8099");
 
-    @Test
-    public void testGetActiveHttpProxy()
-        throws IOException, XmlPullParserException
-    {
-        SettingsXpp3Reader r = new SettingsXpp3Reader();
-        Settings s = r.read( WsImportMojoTest.class.getResourceAsStream( "proxy1.xml" ) );
-        String proxyString = WsImportMojo.getActiveHttpProxy( s );
-        Assert.assertEquals( proxyString, "proxyActive:8099" );
+    s = r.read (WsImportMojoTest.class.getResourceAsStream ("proxy2.xml"));
+    proxyString = WsImportMojo.getActiveHttpProxy (s);
+    Assert.assertNull (proxyString, proxyString);
 
-        s = r.read( WsImportMojoTest.class.getResourceAsStream( "proxy2.xml" ) );
-        proxyString = WsImportMojo.getActiveHttpProxy( s );
-        Assert.assertNull( proxyString, proxyString );
+    s = r.read (WsImportMojoTest.class.getResourceAsStream ("proxy3.xml"));
+    proxyString = WsImportMojo.getActiveHttpProxy (s);
+    Assert.assertEquals (proxyString, "proxyuser:proxypwd@proxy1-auth:8080");
 
-        s = r.read( WsImportMojoTest.class.getResourceAsStream( "proxy3.xml" ) );
-        proxyString = WsImportMojo.getActiveHttpProxy( s );
-        Assert.assertEquals( proxyString, "proxyuser:proxypwd@proxy1-auth:8080" );
-
-        s = r.read( WsImportMojoTest.class.getResourceAsStream( "proxy4.xml" ) );
-        proxyString = WsImportMojo.getActiveHttpProxy( s );
-        Assert.assertEquals( proxyString, "proxyuser2@proxy1-auth2:7777" );
-    }
+    s = r.read (WsImportMojoTest.class.getResourceAsStream ("proxy4.xml"));
+    proxyString = WsImportMojo.getActiveHttpProxy (s);
+    Assert.assertEquals (proxyString, "proxyuser2@proxy1-auth2:7777");
+  }
 }

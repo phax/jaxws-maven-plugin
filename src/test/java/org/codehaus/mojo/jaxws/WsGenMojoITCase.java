@@ -51,7 +51,6 @@ import org.testng.annotations.Test;
  */
 public class WsGenMojoITCase
 {
-
   private static final File PROJECTS_DIR = new File (System.getProperty ("it.projects.dir"));
 
   private File project;

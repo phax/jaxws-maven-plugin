@@ -39,35 +39,34 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
- *
  * @author Lukas Jungmann
  */
 public class RepositoryITCase
 {
+  /**
+   * only two 'releases' of JAX-WS RI should be referenced/downloaded to local
+   * (test) repo: 2.1.7 and the latest integrated one
+   */
+  @Test
+  public void riVersions ()
+  {
+    final File projects = new File (System.getProperty ("it.projects.dir"));
+    final File wsDir = new File (new File (projects.getParentFile (), "it-repo"), "com/sun/xml/ws");
+    final FilenameFilter ff = (dir, name) -> new File (dir, name).isDirectory ();
 
-    /**
-     * only two 'releases' of JAX-WS RI should be referenced/downloaded to local (test) repo: 2.1.7 and the latest
-     * integrated one
-     */
-    @Test
-    public void riVersions()
-    {
-        File projects = new File( System.getProperty( "it.projects.dir" ) );
-        File wsDir = new File( new File( projects.getParentFile(), "it-repo" ), "com/sun/xml/ws" );
-        FilenameFilter ff = ( dir, name ) -> new File( dir, name ).isDirectory();
+    File versions = new File (wsDir, "jaxws-rt");
+    List <String> list = Arrays.asList (versions.list (ff));
+    Assert.assertEquals (list.size (), 1);
+    Assert.assertTrue (list.contains (System.getProperty ("jaxws-ri.version")));
 
-        File versions = new File( wsDir, "jaxws-rt" );
-        List<String> list = Arrays.asList( versions.list( ff ) );
-        Assert.assertEquals( list.size(), 1 );
-        Assert.assertTrue( list.contains( System.getProperty( "jaxws-ri.version" ) ) );
-
-        versions = new File( wsDir, "jaxws-tools" );
-        list = Arrays.asList( versions.list( ff ) );
-        Assert.assertEquals( list.size(), 1 );
-        Assert.assertTrue( list.contains( System.getProperty( "jaxws-ri.version" ) ) );
-    }
+    versions = new File (wsDir, "jaxws-tools");
+    list = Arrays.asList (versions.list (ff));
+    Assert.assertEquals (list.size (), 1);
+    Assert.assertTrue (list.contains (System.getProperty ("jaxws-ri.version")));
+  }
 }
