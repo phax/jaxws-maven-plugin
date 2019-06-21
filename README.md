@@ -1,4 +1,4 @@
-# Official plugin
+# Official plugin is available
 
 It seems like the Mojohaus plugin itself is no longer maintained.
 See https://github.com/mojohaus/jaxws-maven-plugin/issues/54#issuecomment-504335749 for details.
