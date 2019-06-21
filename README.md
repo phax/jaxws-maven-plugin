@@ -1,6 +1,21 @@
+# Official plugin
+
+It seems like the Mojohaus plugin itself is no longer maintained.
+See https://github.com/mojohaus/jaxws-maven-plugin/issues/54#issuecomment-504335749 for details.
+
+Please try the official Maven plugin from https://github.com/eclipse-ee4j/metro-jax-ws/tree/master/jaxws-ri/jaxws-maven-plugin via
+```xml
+  <dependency>
+    <groupId>com.sun.xml.ws</groupId>
+    <artifactId>jaxws-maven-plugin</artifactId>
+    <version>2.3.2</version>
+  </dependency> 
+```
+before you use this plugin.
+
 # MojoHaus JAX-WS Maven Plugin
 
-This is the [jaxws-maven-plugin](http://www.mojohaus.org/jaxws-maven-plugin/).
+This is a fork of the [jaxws-maven-plugin](http://www.mojohaus.org/jaxws-maven-plugin/).
 
 **This is a work around release for Java 9 to 12 compatibility**
 
