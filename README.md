@@ -26,6 +26,8 @@ This plugin is meant to work as a direct replacement to `org.codehaus.mojo:jaxws
 
 ## News and Noteworthy
 
+* v2.6.2 - 2019-06-25
+    * Integrated https://github.com/phax/jaxws-maven-plugin/pull/4
 * v2.6.1 - 2019-05-07
     * Integrated https://github.com/mojohaus/jaxws-maven-plugin/issues/19
     * Added Java 12 support
@@ -38,7 +40,7 @@ This plugin is meant to work as a direct replacement to `org.codehaus.mojo:jaxws
 <plugin>
   <groupId>com.helger.maven</groupId>
   <artifactId>jaxws-maven-plugin</artifactId>
-  <version>2.6.1</version>
+  <version>2.6.2</version>
   <configuration>
     ...
   </configuration>

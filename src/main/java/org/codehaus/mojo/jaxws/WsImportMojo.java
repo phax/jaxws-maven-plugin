@@ -38,16 +38,15 @@ package org.codehaus.mojo.jaxws;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Formatter;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -813,18 +812,16 @@ abstract class WsImportMojo extends AbstractJaxwsMojo
 
   private String getHash (final String s)
   {
-    try (Formatter formatter = new Formatter ())
+    try
     {
       final MessageDigest md = MessageDigest.getInstance ("SHA");
-      for (final byte b : md.digest (s.getBytes ("UTF-8")))
+      final byte [] aBytes = md.digest (s.getBytes (StandardCharsets.UTF_8));
+      final StringBuilder aSB = new StringBuilder (aBytes.length * 2);
+      for (final byte b : aBytes)
       {
-        formatter.format ("%02x", b);
+        aSB.append (Character.forDigit ((b & 0xf0) >> 4, 16)).append (Character.forDigit (b & 0x0f, 16));
       }
-      return formatter.toString ();
-    }
-    catch (final UnsupportedEncodingException ex)
-    {
-      getLog ().debug (ex.getMessage (), ex);
+      return aSB.toString ();
     }
     catch (final NoSuchAlgorithmException ex)
     {
